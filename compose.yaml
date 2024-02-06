@@ -1,0 +1,28 @@
+services:
+  pulsar:
+    hostname: pulsar
+    image: 'apachepulsar/pulsar:latest'
+    ports:
+      - '6650'
+      - '8080'
+    command: 'bin/pulsar standalone'
+    healthcheck:
+      test: [ 'CMD', 'bin/pulsar-admin', 'brokers', 'healthcheck' ]
+      interval: 5s
+      timeout: 10s
+      retries: 10
+  streamvisor:
+    image: ghcr.io/streamvisor/streamvisor:1.1.1
+    ports:
+      - '8888:8888'
+      - '7750:7750'
+    depends_on:
+      pulsar:
+        condition: service_healthy
+    links:
+      - pulsar
+    environment:
+      - 'STREAMVISOR_BOOTSTRAPENV_ENABLE=true'
+      - 'STREAMVISOR_BOOTSTRAPENV_NAME=standalone'
+      - 'STREAMVISOR_BOOTSTRAPENV_SERVICEURL=http://pulsar:8080'
+      - 'STREAMVISOR_BOOTSTRAPENV_BROKERURL=pulsar://pulsar:6650'
